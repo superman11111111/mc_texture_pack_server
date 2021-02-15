@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <p>Current texture pack: <a href="/pack" download="proposed_file_name"> {{ rp_name }}</a> </p>
+    <form method="POST" action="/upload" enctype="multipart/form-data">
+        <p><input type="file" name="file"></p>
+        <p><input type="submit" value="Submit"></p>
+    </form>
+    <div class="pack-explorer"></div>
+    <style>
+        body {
+            padding: 50px;
+        }
+
+        div {
+            -webkit-user-select: none;
+            /* Safari */
+            -moz-user-select: none;
+            /* Firefox */
+            -ms-user-select: none;
+            /* IE10+/Edge */
+            user-select: none;
+            /* Standard */
+        }
+
+        div.pack-explorer {
+            padding: 10px;
+            /* background-color: lightblue; */
+            border-color: black;
+            border-width: 5px;
+            border-radius: 5px;
+        }
+
+        div.pack-explorer-card {
+            padding: 5px;
+            border-bottom: 2px solid black;
+            transition: transform .15s;
+            border-radius: 5px;
+        }
+
+        div.pack-explorer-card:hover {
+            transform: scale(1.03);
+            background-color: #77ff77;
+        }
+    </style>
+</body>
+<script src="{{url_for('static', filename='index.js')}}"></script>
+
+</html>

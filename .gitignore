@@ -1,0 +1,8 @@
+env/
+tmp/
+uploads/
+__pycache__/
+*.swp
+*.zip
+server.properties*
+
