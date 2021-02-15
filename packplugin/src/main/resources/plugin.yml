@@ -1,0 +1,4 @@
+name: Pack
+version: ${project.version}
+main: mkypr.pack.Pack
+api-version: 1.16

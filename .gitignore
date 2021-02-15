@@ -1,4 +1,5 @@
 env/
+mcserver/
 tmp/
 uploads/
 __pycache__/
