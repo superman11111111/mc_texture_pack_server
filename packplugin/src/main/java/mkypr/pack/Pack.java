@@ -17,6 +17,8 @@ public final class Pack extends JavaPlugin implements Listener {
 
     public HashMap<String, String> properties;
     private final int INTERVAL = 100; // Run every 5 seconds
+    private final int MAX_RETRIES = 10;
+    public final HashMap<UUID, Integer> player_retry_counts = new HashMap<>();
 
     public static byte[] hexStringToByteArray(String s) {
         int len = s.length();
@@ -92,10 +94,10 @@ public final class Pack extends JavaPlugin implements Listener {
     @EventHandler
     void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
+        player_retry_counts.put(p.getUniqueId(), 0);
         byte[] hash = hexStringToByteArray(properties.get("resource-pack-sha1"));
         String pack = properties.get("resource-pack");
         forceTexturePackPlayer(p, hash, pack);
-
     }
 
     @EventHandler
@@ -112,7 +114,17 @@ public final class Pack extends JavaPlugin implements Listener {
             case FAILED_DOWNLOAD:
                 hash = hexStringToByteArray(properties.get("resource-pack-sha1"));
                 pack = properties.get("resource-pack");
-                forceTexturePackPlayer(e.getPlayer(), hash, pack);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        UUID uuid = e.getPlayer().getUniqueId();
+                        if (player_retry_counts.get(uuid) > MAX_RETRIES) {
+                            return;
+                        }
+                        forceTexturePackPlayer(e.getPlayer(), hash, pack);
+                        player_retry_counts.put(uuid, player_retry_counts.get(uuid)+1);
+                    }
+                }.runTaskLater(this, 20);
                 break;
             case ACCEPTED:
                 break;

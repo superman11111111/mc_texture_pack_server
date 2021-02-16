@@ -2,6 +2,9 @@
 <html lang="en">
 
 <head>
+    <!-- <script src="https://use.fontawesome.com/a67d0d63c6.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/js/all.min.js"></script>
+
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +12,9 @@
 </head>
 
 <body>
-    <p>Current texture pack: <a href="/pack" download="proposed_file_name"> {{ rp_name }}</a> </p>
-    <form method="POST" action="/upload" enctype="multipart/form-data">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/fontawesome.min.css" /> -->
+    <p>Current texture pack: <a href=" /pack" download="proposed_file_name"> {{ rp_name }}</a> </p>
+    <form method="POST" action="/upload" enctype="m ultipart/form-data">
         <p><input type="file" name="file"></p>
         <p><input type="submit" value="Submit"></p>
     </form>
@@ -32,7 +36,6 @@
         }
 
         div.pack-explorer {
-            padding: 10px;
             /* background-color: lightblue; */
             border-color: black;
             border-width: 5px;
@@ -41,14 +44,68 @@
 
         div.pack-explorer-card {
             padding: 5px;
+            /* overflow: hidden; */
+            /* border-bottom: 2px solid black; */
+            /* transition: transform .15s; */
+            /* border-radius: 5px; */
+        }
+
+        div.pack-explorer-card-seperator {
+            overflow: hidden;
+            float: right;
+        }
+
+        div.pack-explorer-card-text {
+            padding: 10px;
+            overflow: hidden;
             border-bottom: 2px solid black;
-            transition: transform .15s;
+            /* transition: transform .15s; */
+            -moz-transition: all .15s ease-in;
+            -o-transition: all .15s ease-in;
+            -webkit-transition: all .15s ease-in;
+            transition: all .15s ease-in;
+            /* transition: color .2s ease-in; */
             border-radius: 5px;
         }
 
-        div.pack-explorer-card:hover {
+        div.pack-explorer-card-text:hover {
             transform: scale(1.03);
             background-color: #77ff77;
+        }
+
+        div.pack-explorer-crud {
+            padding-bottom: 10px;
+            direction: rtl;
+        }
+
+        button.pack-explorer-crud-btn {
+            margin-left: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        div.pack-explorer-card-cb-box {
+
+            position: relative;
+            top: 50%;
+            transform: translateY(50%);
+            border-radius: 5px;
+            margin: 5;
+        }
+
+        div.pack-explorer-card-seperator {
+            width: 2vw;
+            height: 2vw;
+        }
+
+        div.pack-explorer-card-cb-box,
+        button.pack-explorer-crud-btn {
+            float: right;
+        }
+
+        div.inline {
+            display: inline-block;
         }
     </style>
 </body>
