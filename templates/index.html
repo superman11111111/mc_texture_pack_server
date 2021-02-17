@@ -12,15 +12,232 @@
 </head>
 
 <body>
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/fontawesome.min.css" /> -->
-    <p>Current texture pack: <a href=" /pack" download="proposed_file_name"> {{ rp_name }}</a> </p>
-    <form method="POST" action="/upload" enctype="multipart/form-data">
-        <p><input type="file" name="file"></p>
-        <p><input type="submit" value="Submit"></p>
-    </form>
-    <div class="pack-explorer"></div>
+    <div class="body">
+        <p>Current texture pack: <a href=" /pack" download="proposed_file_name"> {{ rp_name }}</a> </p>
+        <form method="POST" action="/upload" enctype="multipart/form-data">
+            <p><input type="file" name="file"></p>
+            <p><input type="submit" value="Submit"></p>
+        </form>
+        <div class="pack-explorer"></div>
+        <div class="footer">
+            <div class="cube">
+                <div class="top"></div>
+                <div class="right"></div>
+                <div class="bottom"></div>
+                <div class="left"></div>
+                <div class="front"></div>
+                <div class="back"></div>
+            </div>
+            <div class="cube-xs">
+                <div class="top"></div>
+                <div class="right"></div>
+                <div class="bottom"></div>
+                <div class="left"></div>
+                <div class="front"></div>
+                <div class="back"></div>
+            </div>
+            <div class="cube-xxs">
+                <div class="top"></div>
+                <div class="right"></div>
+                <div class="bottom"></div>
+                <div class="left"></div>
+                <div class="front"></div>
+                <div class="back"></div>
+            </div>
+        </div>
+    </div>
+    <style>
+        .cube-xxs {
+            transform-style: preserve-3d;
+            margin: 200px;
+            /* -webkit-animation: ; */
+            animation: spin 3s infinite cubic-bezier(.39, .84, .68, .27);
+            position: relative;
+            width: 50px;
+            height: 50px;
+            top: 50%;
+            left: 10%;
+            margin-left: -50px;
+            margin-top: -50px;
+        }
+
+        .cube-xxs div {
+            width: 50px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.603);
+            background: rgba(77, 44, 0, 0.315);
+            display: block;
+            position: absolute;
+        }
+
+
+        .cube-xxs div.top {
+            transform: rotateX(90deg);
+            margin-top: -25px;
+        }
+
+        .cube-xxs div.right {
+            transform: rotateY(90deg);
+            margin-left: 25px;
+        }
+
+        .cube-xxs div.bottom {
+            transform: rotateX(-90deg);
+            margin-top: 25px;
+        }
+
+        .cube-xxs div.left {
+            transform: rotateY(-90deg);
+            margin-left: -25px;
+        }
+
+        .cube-xxs div.front {
+            transform: translateZ(25px);
+        }
+
+        .cube-xxs div.back {
+            transform: translateZ(-25px) rotateX(180deg);
+        }
+
+
+
+        .cube-xs {
+            transform-style: preserve-3d;
+            margin: 200px;
+            /* -webkit-animation: ; */
+            animation: spin 3s infinite cubic-bezier(.39, .84, .68, .27);
+            position: relative;
+            width: 100px;
+            height: 100px;
+            top: 50%;
+            left: 10%;
+            margin-left: -50px;
+            margin-top: -50px;
+        }
+
+        .cube-xs div {
+            width: 100px;
+            height: 100px;
+            line-height: 100px;
+            text-align: center;
+            box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.603);
+            background: rgba(77, 44, 0, 0.315);
+            display: block;
+            position: absolute;
+        }
+
+
+        .cube-xs div.top {
+            transform: rotateX(90deg);
+            margin-top: -50px;
+        }
+
+        .cube-xs div.right {
+            transform: rotateY(90deg);
+            margin-left: 50px;
+        }
+
+        .cube-xs div.bottom {
+            transform: rotateX(-90deg);
+            margin-top: 50px;
+        }
+
+        .cube-xs div.left {
+            transform: rotateY(-90deg);
+            margin-left: -50px;
+        }
+
+        .cube-xs div.front {
+            transform: translateZ(50px);
+        }
+
+        .cube-xs div.back {
+            transform: translateZ(-50px) rotateX(180deg);
+        }
+
+        .cube {
+            transform-style: preserve-3d;
+            margin: 200px;
+            animation: spin 3s infinite cubic-bezier(.39, .84, .68, .27);
+            position: relative;
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 10%;
+            margin-left: -50px;
+            margin-top: -50px;
+        }
+
+
+        .cube div {
+            width: 200px;
+            height: 200px;
+            line-height: 200px;
+            text-align: center;
+            box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.603);
+            background: rgba(77, 44, 0, 0.315);
+            display: block;
+            position: absolute;
+        }
+
+        .cube div.top {
+            transform: rotateX(90deg);
+            margin-top: -100px;
+        }
+
+        .cube div.right {
+            transform: rotateY(90deg);
+            margin-left: 100px;
+        }
+
+        .cube div.bottom {
+            transform: rotateX(-90deg);
+            margin-top: 100px;
+        }
+
+        .cube div.left {
+            transform: rotateY(-90deg);
+            margin-left: -100px;
+        }
+
+        .cube div.front {
+            transform: translateZ(100px);
+        }
+
+        .cube div.back {
+            transform: translateZ(-100px) rotateX(180deg);
+        }
+
+        @keyframes spin {
+            0% {
+                -webkit-transform: rotateX(-45deg) rotateY(45deg);
+            }
+
+            100% {
+                -webkit-transform: rotateX(-45deg) rotateY(765deg);
+            }
+        }
+    </style>
     <style>
         body {
+            /* overflow: hidden; */
+            width: 90%;
+        }
+
+        div.footer {
+            display: flex;
+            position: absolute;
+            bottom: 0;
+            height: 50%;
+            width: 70%;
+            left: 25%;
+            margin-top: 40px;
+        }
+
+        div.body {
+            width: 100%;
             padding: 50px;
         }
 
@@ -58,19 +275,31 @@
         div.pack-explorer-card-text {
             padding: 10px;
             overflow: hidden;
-            border-bottom: 2px solid black;
+            /* border: 1px solid grey; */
+            border-radius: 100px;
+            background-color: rgb(245, 245, 245);
             /* transition: transform .15s; */
-            -moz-transition: all .15s ease-in;
-            -o-transition: all .15s ease-in;
-            -webkit-transition: all .15s ease-in;
-            transition: all .15s ease-in;
+            -moz-transition: all .15s ease-in-out;
+            -o-transition: all .15s ease-in-out;
+            -webkit-transition: all .15s ease-in-out;
+            transition: all .15s ease-in-out;
             /* transition: color .2s ease-in; */
-            border-radius: 5px;
+        }
+
+        div.pack-explorer-card-time {
+            float: left;
+        }
+
+        div.pack-explorer-card-size {
+            float: right;
         }
 
         div.pack-explorer-card-text:hover {
-            transform: scale(1.03);
+            transform: scaleX(1.025);
+            /* transform: scale(1.1, 30); */
             background-color: #77ff77;
+            /* border: 2px solid white; */
+            border-bottom: 2px solid black;
         }
 
         div.pack-explorer-crud {
@@ -96,8 +325,15 @@
 
         div.pack-explorer-card-seperator {
             width: 2vw;
-            height: 2vw;
+            height: 1vw;
         }
+
+        div.pack-explorer-card-text-seperator {
+            width: 2vw;
+            height: 1vw;
+            float: left;
+        }
+
 
         div.pack-explorer-card-cb-box,
         button.pack-explorer-crud-btn {

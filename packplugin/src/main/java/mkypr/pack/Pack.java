@@ -1,5 +1,7 @@
 package mkypr.pack;
 
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -10,7 +12,9 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.awt.*;
 import java.io.*;
+import java.net.URL;
 import java.util.*;
 
 public final class Pack extends JavaPlugin implements Listener {
@@ -18,8 +22,27 @@ public final class Pack extends JavaPlugin implements Listener {
     public HashMap<String, String> properties;
     private final int INTERVAL = 100; // Run every 5 seconds
     private final int MAX_RETRIES = 10;
+    private String IP;
     public final HashMap<UUID, Integer> player_retry_counts = new HashMap<>();
 
+    public static String getIp() throws Exception {
+        URL whatismyip = new URL("http://checkip.amazonaws.com");
+        BufferedReader in = null;
+        try {
+            in = new BufferedReader(new InputStreamReader(
+                    whatismyip.openStream()));
+            String ip = in.readLine();
+            return ip;
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
     public static byte[] hexStringToByteArray(String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];
@@ -95,6 +118,9 @@ public final class Pack extends JavaPlugin implements Listener {
     void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
         player_retry_counts.put(p.getUniqueId(), 0);
+        TextComponent message = new TextComponent("Want to change the server resource pack?\nGo to " + "http://" + IP + ":3333");
+        message.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "http://" + IP + ":3333"));
+        p.spigot().sendMessage(message);
         byte[] hash = hexStringToByteArray(properties.get("resource-pack-sha1"));
         String pack = properties.get("resource-pack");
         forceTexturePackPlayer(p, hash, pack);
@@ -119,12 +145,13 @@ public final class Pack extends JavaPlugin implements Listener {
                     public void run() {
                         UUID uuid = e.getPlayer().getUniqueId();
                         if (player_retry_counts.get(uuid) > MAX_RETRIES) {
+                            e.getPlayer().kickPlayer("Try again");
                             return;
                         }
                         forceTexturePackPlayer(e.getPlayer(), hash, pack);
                         player_retry_counts.put(uuid, player_retry_counts.get(uuid)+1);
                     }
-                }.runTaskLater(this, 20);
+                }.runTaskLater(this, 100);
                 break;
             case ACCEPTED:
                 break;
@@ -137,6 +164,11 @@ public final class Pack extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        try {
+            IP = getIp();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         properties = readProperties();
         startRunnable();
         PluginManager pm = Bukkit.getPluginManager();

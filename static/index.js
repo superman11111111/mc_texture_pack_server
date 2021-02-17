@@ -49,11 +49,28 @@ function create_crud_btn(icon, selection, callback) {
     return btn
 }
 
+function bytes_to_human(bytes_n) {
+    if (bytes_n > 1000000) {
+        return String(Math.floor(bytes_n / 1000000)) + "MB"
+    }
+    if (bytes_n > 1000) {
+        return String(Math.floor(bytes_n / 1000)) + "KB"
+    }
+    return String(bytes_n) + "B"
+}
+
+function ts_to_date(timestamp) {
+    var date = new Date(timestamp * 1000)
+    return date.toLocaleDateString("en-US") + " " + date.toISOString().slice(-13, -5)
+}
+
 async function fill_explorers(explorers) {
     for (let pe of explorers) {
         let selection = [];
         let crud = document.createElement('div')
         crud.className = 'pack-explorer-crud'
+
+        crud.appendChild(document.createTextNode("Upload time"))
 
         crud.appendChild(create_crud_btn('fa fa-trash', selection, function () {
             selection = []
@@ -73,14 +90,27 @@ async function fill_explorers(explorers) {
         (await fetch('/uploads')).json().then(
             data => {
                 for (let i = 0; i < data.length; i++) {
-                    const fn = data[i];
+                    const fn = data[i]['name']
+                    const size = data[i]['size']
+                    const time = data[i]['time']
 
                     let card = document.createElement('div')
                     card.className = 'pack-explorer-card'
 
                     let text = document.createElement('div')
                     text.className = 'pack-explorer-card-text'
-                    text.appendChild(document.createTextNode(fn))
+                    let sizeDiv = document.createElement('div')
+                    sizeDiv.className = 'pack-explorer-card-size'
+                    sizeDiv.appendChild(document.createTextNode(bytes_to_human(size)))
+                    let timeDiv = document.createElement('div')
+                    timeDiv.className = 'pack-explorer-card-time'
+                    timeDiv.appendChild(document.createTextNode(ts_to_date(time)))
+                    let text_seperator = document.createElement('div')
+                    text_seperator.className = 'pack-explorer-card-text-seperator'
+                    text.appendChild(timeDiv)
+                    text.appendChild(text_seperator)
+                    text.appendChild(document.createTextNode(' ' + fn))
+                    text.appendChild(sizeDiv)
 
                     let cbb = document.createElement('div')
                     cbb.className = 'pack-explorer-card-cb-box'

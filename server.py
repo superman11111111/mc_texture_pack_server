@@ -141,7 +141,7 @@ def get_upload(file):
 
 @app.route('/uploads')
 def uploads():
-    return jsonify(os.listdir(UPLOADS_DIR))
+    return jsonify([{'name': x, 'size': os.path.getsize(os.path.join(UPLOADS_DIR, x)), 'time': os.path.getmtime(os.path.join(UPLOADS_DIR, x))} for x in os.listdir(UPLOADS_DIR)])
 
 
 if __name__ == '__main__':
