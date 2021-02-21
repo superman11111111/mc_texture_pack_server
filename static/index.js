@@ -159,4 +159,21 @@ async function fill_explorers(explorers) {
     }
 }
 
+for (let reset_btn of document.getElementsByClassName("reset-btn")) {
+    reset_btn.appendChild(document.createTextNode("Reset texture pack"))
+    // reset_btn.textContent = "Reset texture pack"
+    reset_btn.addEventListener("click", function () {
+        let payload = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'set': 0 })
+        }
+        fetch('/pack', payload).then(r => r.json().then(dd => {
+            print_status(dd)
+            location.reload();
+        }))
+    })
+}
 fill_explorers(document.getElementsByClassName('pack-explorer'))

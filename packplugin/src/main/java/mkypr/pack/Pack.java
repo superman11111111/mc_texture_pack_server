@@ -77,6 +77,11 @@ public final class Pack extends JavaPlugin implements Listener {
         }
     }
 
+
+    void kickPlayerFromAsync(Player p, String msg) {
+        Bukkit.getScheduler().runTask(this, () -> p.kickPlayer(msg));
+    }
+
     void forceTexturePackPlayerLater(Player p, String pack, byte[] hash) {
         System.out.printf("%s: Reloading texture pack %s%n", p.getName(), pack);
         UUID uuid = p.getUniqueId();
@@ -86,7 +91,11 @@ public final class Pack extends JavaPlugin implements Listener {
             @Override
             public void run() {
                 if (player_retry_counts.get(uuid) >= MAX_RETRIES) {
-                    p.sendMessage("Please rejoin to reload the texture pack!");
+                    if (properties.get("resource-pack").isEmpty()) {
+                        kickPlayerFromAsync(p, "Reset texture pack");
+                    } else {
+                        p.sendMessage("Please rejoin to reload the texture pack!");
+                    }
                     this.cancel();
                     return;
                 }
@@ -100,13 +109,17 @@ public final class Pack extends JavaPlugin implements Listener {
                     case NULL:
                     case FAILURE:
                     default:
-                        System.out.printf("%s: Try #%d%n", p.getName(), player_retry_counts.get(uuid));
+//                        System.out.printf("%s: Try #%d%n", p.getName(), player_retry_counts.get(uuid));
                         player_download_status.put(uuid, DOWNLOAD_STATUS.IS_DOWNLOADING);
-                        p.setResourcePack(pack, hash);
+                        if (hash.length == 0) {
+                            p.setResourcePack(pack);
+                        } else {
+                            p.setResourcePack(pack, hash);
+                        }
                         break;
                 }
             }
-        }.runTaskTimerAsynchronously(this, RP_LOAD_DELAY, 0);
+        }.runTaskTimerAsynchronously(this, 0, 0);
     }
 
     void forceTexturePackAllLater() {
@@ -125,8 +138,8 @@ public final class Pack extends JavaPlugin implements Listener {
             Scanner reader = new Scanner(f);
             while (reader.hasNextLine()) {
                 String data = reader.nextLine();
-                String[] sbuf = data.split("=");
-                if (sbuf.length == 2) {
+                String[] sbuf = data.split("=", -1);
+                if (sbuf.length > 1) {
                     tmpProps.put(sbuf[0], sbuf[1]);
                 }
             }
@@ -137,23 +150,45 @@ public final class Pack extends JavaPlugin implements Listener {
         return null;
     }
 
+    boolean sameKeySets(HashMap m1, HashMap m2) {
+//        System.out.println(m1);
+        for (Object key : m2.keySet()) {
+            if (!m1.containsKey(key)) {
+                System.out.println(key);
+                return false;
+            }
+        }
+//        System.out.println(m2);
+        for (Object key : m1.keySet()) {
+            if (!m2.containsKey(key)) {
+                System.out.println(key);
+                return false;
+            }
+        }
+        return true;
+    }
+
     void startRunnable() {
         new BukkitRunnable() {
             @Override
             public void run() {
                 HashMap<String, String> tmpProps = readProperties();
+//                System.out.printf("%s %s%n", tmpProps.get("resource-pack"), properties.get("resource-pack"));
+//                System.out.println(sameKeySets(properties, tmpProps));
+//                System.out.println(Objects.equals(tmpProps.get("resource-pack"), properties.get("resource-pack")));
+
                 if (tmpProps != null) {
-                    Set<String> keys = tmpProps.keySet();
-                    Set<String> old_keys = properties.keySet();
-                    Set<String> new_keys = new HashSet<>(keys);
-                    new_keys.removeAll(old_keys);
-                    if (new_keys.size() == 0) {
-                        for (String key : keys) {
-                            if (!tmpProps.get(key).equals(properties.get(key))) {
-                                System.out.println(key);
+                    if (sameKeySets(properties, tmpProps)) {
+                        for (String key : tmpProps.keySet()) {
+                            if (!Objects.equals(tmpProps.get(key), properties.get(key))) {
+//                                System.out.println(key);
                                 if (key.equals("resource-pack-sha1")) {
                                     properties = tmpProps;
-                                    Bukkit.broadcastMessage("SHA1 change detected!");
+//                                    if (properties.get(key).isEmpty()) {
+//                                        Bukkit.broadcastMessage("Reset texture pack!");
+//                                    } else {
+//                                        Bukkit.broadcastMessage("New texture pack!");
+//                                    }
                                     forceTexturePackAllLater();
                                     break;
                                 }
@@ -161,7 +196,6 @@ public final class Pack extends JavaPlugin implements Listener {
                         }
                     } else {
                         //TODO: Implement when new key appears in server.properties
-                        properties = tmpProps;
                     }
                 }
             }
@@ -187,9 +221,11 @@ public final class Pack extends JavaPlugin implements Listener {
 
         e.setJoinMessage("Use /help Pack for more commands");
 
-        byte[] hash = hexStringToByteArray(properties.get("resource-pack-sha1"));
-        String pack = properties.get("resource-pack");
-        forceTexturePackPlayerLater(p, pack, hash);
+        if (!properties.get("resource-pack").isEmpty()) {
+            byte[] hash = hexStringToByteArray(properties.get("resource-pack-sha1"));
+            String pack = properties.get("resource-pack");
+            forceTexturePackPlayerLater(p, pack, hash);
+        }
 
     }
 

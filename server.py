@@ -68,17 +68,20 @@ def get_curr_pack():
 def index():
     mkdir(UPLOADS_DIR)
     mkdir(TMP_DIR)
-    top, props = read_props()
-    props['resource-pack'] = f'http://{THIS_IP}:{PORT}/pack'
-    write_props(top, props)
     f = get_curr_pack()
     return render_template('index.html', rp_name=str(f).split('/')[-1])
 
 
-def update_sha1(fn):
-    sha1 = sha1_f(os.path.join(UPLOADS_DIR, fn)).hexdigest()
+def write_sha1(sha1):
     top, props = read_props()
+    props['resource-pack'] = f'http://{THIS_IP}:{PORT}/pack'
     props['resource-pack-sha1'] = sha1
+    write_props(top, props)
+
+def reset_pack():
+    top, props = read_props()
+    props['resource-pack-sha1'] = ''
+    props['resource-pack'] = ''
     write_props(top, props)
 
 
@@ -104,9 +107,12 @@ def pack():
         data = json.loads(data)
         print(data)
         if 'set' in data:
+            if data['set'] == 0:
+                reset_pack()
+                return jsonify({'msg': 'success'})
             fn = secure_filename(data['set'])
             if fn in os.listdir(UPLOADS_DIR):
-                update_sha1(fn)
+                write_sha1(sha1_f(os.path.join(UPLOADS_DIR, fn)).hexdigest())
                 return jsonify({'msg': 'success'})
         return abort(404)
 
