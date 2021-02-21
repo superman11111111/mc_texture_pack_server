@@ -15,3 +15,5 @@ commands:
     description: Flachwitz
   witz:
     description: Witz
+  debug:
+    description: Debug

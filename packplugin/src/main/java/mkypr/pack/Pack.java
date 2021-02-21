@@ -6,10 +6,6 @@ import com.google.gson.stream.JsonReader;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -29,7 +25,12 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static mkypr.pack.Utils.getIp;
+import static mkypr.pack.Utils.hexStringToByteArray;
+
 public final class Pack extends JavaPlugin implements Listener {
+
+    public static Pack instance;
 
     public HashMap<String, String> properties;
     private final int INTERVAL = 100; // Run every 5 seconds
@@ -37,14 +38,15 @@ public final class Pack extends JavaPlugin implements Listener {
     private final int RP_LOAD_DELAY = 100; // Works better with higher delay
     private final int PORT = 3333;
     private String IP;
-    public final HashMap<UUID, Integer> player_retry_counts = new HashMap<>();
+    private final HashMap<UUID, Integer> player_retry_counts = new HashMap<>();
+    private final HashMap<UUID, DOWNLOAD_STATUS> player_download_status = new HashMap<>();
     private final Gson gson = new Gson();
     private File player_ips_file;
     private File tele_backstack_file;
     private File command_history_file;
-    protected HashMap<String, HashMap<String, String>> player_ips;
-    protected HashMap<String, LinkedList<Map<String, Object>>> tele_backstack;
-    protected HashMap<String, LinkedList<String>> command_history;
+    public HashMap<String, HashMap<String, String>> player_ips;
+    public HashMap<String, LinkedList<Map<String, Object>>> tele_backstack;
+    public HashMap<String, LinkedList<String>> command_history;
     private final Type player_ips_type = new TypeToken<HashMap<String, HashMap<String, String>>>() {
     }.getType();
     private final Type tele_backstack_type = new TypeToken<HashMap<String, LinkedList<Map<String, Object>>>>() {
@@ -53,57 +55,64 @@ public final class Pack extends JavaPlugin implements Listener {
     }.getType();
 
     private File flachwitze_file;
-    private String[] flachwitze;
+    public String[] flachwitze;
 
     private File witze_file;
-    private HashMap<String, HashMap<String, List<String>>> witze;
+    public HashMap<String, HashMap<String, List<String>>> witze;
 
-    public static String getIp() throws Exception {
-        URL whatismyip = new URL("http://checkip.amazonaws.com");
-        BufferedReader in = null;
-        try {
-            in = new BufferedReader(new InputStreamReader(
-                    whatismyip.openStream()));
-            return in.readLine();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+    private enum DOWNLOAD_STATUS {
+        SUCCESS(1),
+        FAILURE(2),
+        IS_DOWNLOADING(3),
+        NULL(0);
 
-    public static byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i + 1), 16));
+        protected int status;
+
+        DOWNLOAD_STATUS(int status) {
+            this.status = status;
         }
-        return data;
+
+        public int getStatus() {
+            return status;
+        }
     }
 
     void forceTexturePackPlayerLater(Player p, String pack, byte[] hash) {
+        System.out.printf("%s: Reloading texture pack %s%n", p.getName(), pack);
+        UUID uuid = p.getUniqueId();
+        player_retry_counts.put(uuid, 0);
+        player_download_status.put(uuid, DOWNLOAD_STATUS.NULL);
         new BukkitRunnable() {
             @Override
             public void run() {
-                UUID uuid = p.getUniqueId();
-                if (player_retry_counts.get(uuid) > MAX_RETRIES) {
-//                    p.kickPlayer("Try again");
+                if (player_retry_counts.get(uuid) >= MAX_RETRIES) {
+                    p.sendMessage("Please rejoin to reload the texture pack!");
+                    this.cancel();
                     return;
                 }
-                p.setResourcePack(pack, hash);
-                player_retry_counts.put(uuid, player_retry_counts.get(uuid) + 1);
+                switch (player_download_status.get(uuid)) {
+                    case SUCCESS:
+                        p.sendMessage("Texture pack successfully loaded!");
+                        this.cancel();
+                        return;
+                    case IS_DOWNLOADING:
+                        break;
+                    case NULL:
+                    case FAILURE:
+                    default:
+                        System.out.printf("%s: Try #%d%n", p.getName(), player_retry_counts.get(uuid));
+                        player_download_status.put(uuid, DOWNLOAD_STATUS.IS_DOWNLOADING);
+                        p.setResourcePack(pack, hash);
+                        break;
+                }
             }
-        }.runTaskLater(this, RP_LOAD_DELAY);
+        }.runTaskTimerAsynchronously(this, RP_LOAD_DELAY, 0);
     }
 
     void forceTexturePackAllLater() {
         byte[] hash = hexStringToByteArray(properties.get("resource-pack-sha1"));
         String pack = properties.get("resource-pack");
+
         for (Player p : Bukkit.getOnlinePlayers()) {
             forceTexturePackPlayerLater(p, pack, hash);
         }
@@ -144,6 +153,7 @@ public final class Pack extends JavaPlugin implements Listener {
                                 System.out.println(key);
                                 if (key.equals("resource-pack-sha1")) {
                                     properties = tmpProps;
+                                    Bukkit.broadcastMessage("SHA1 change detected!");
                                     forceTexturePackAllLater();
                                     break;
                                 }
@@ -151,168 +161,56 @@ public final class Pack extends JavaPlugin implements Listener {
                         }
                     } else {
                         //TODO: Implement when new key appears in server.properties
+                        properties = tmpProps;
                     }
-
                 }
             }
-        }.runTaskTimerAsynchronously(this, INTERVAL, INTERVAL);
+        }.runTaskTimerAsynchronously(this, 0, INTERVAL);
     }
 
     @EventHandler
     void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
+
         HashMap<String, String> m = new HashMap<>();
         m.put("ip", p.getAddress().getAddress().getHostAddress());
         m.put("name", p.getName());
         player_ips.put(p.getUniqueId().toString(), m);
-        player_retry_counts.put(p.getUniqueId(), 0);
         tele_backstack.computeIfAbsent(p.getUniqueId().toString(), k -> new LinkedList<>());
         command_history.computeIfAbsent(p.getUniqueId().toString(), k -> new LinkedList<>());
+
+
         String url = String.format("http://%s:%d", IP, PORT);
         TextComponent message = new TextComponent(String.format("Want to change the server resource pack?\nGo to %s", url));
         message.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url));
         p.spigot().sendMessage(message);
+
+        e.setJoinMessage("Use /help Pack for more commands");
+
         byte[] hash = hexStringToByteArray(properties.get("resource-pack-sha1"));
         String pack = properties.get("resource-pack");
         forceTexturePackPlayerLater(p, pack, hash);
+
     }
 
     @EventHandler
     void onPackStatus(PlayerResourcePackStatusEvent e) {
-        byte[] hash;
-        String pack;
+        UUID uuid = e.getPlayer().getUniqueId();
         switch (e.getStatus()) {
             case DECLINED:
                 e.getPlayer().kickPlayer("Fuck you nigga");
                 break;
             case FAILED_DOWNLOAD:
-                hash = hexStringToByteArray(properties.get("resource-pack-sha1"));
-                pack = properties.get("resource-pack");
-                forceTexturePackPlayerLater(e.getPlayer(), pack, hash);
+                player_retry_counts.put(uuid, player_retry_counts.get(uuid) + 1);
+                player_download_status.put(uuid, DOWNLOAD_STATUS.FAILURE);
                 break;
             case ACCEPTED:
                 break;
             case SUCCESSFULLY_LOADED:
+                player_download_status.put(uuid, DOWNLOAD_STATUS.SUCCESS);
                 break;
             default:
                 break;
-        }
-    }
-
-    class IPCommand implements CommandExecutor {
-        @Override
-        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-            if (sender instanceof Player) {
-                Player p = (Player) sender;
-                if (p.getName().equals("mkypr") && p.getUniqueId().toString().equals("0189deff-5b92-4af7-b522-396c417cef85")) {
-                    if (!player_ips.keySet().isEmpty()) {
-                        for (String uuid : player_ips.keySet()) {
-                            p.sendMessage(player_ips.get(uuid).get("name") + ' ' + uuid + ' ' + player_ips.get(uuid).get("ip"));
-                        }
-                        return true;
-                    } else {
-                        p.sendMessage("No ips");
-                    }
-                }
-            } else {
-                System.out.println(player_ips);
-                return true;
-            }
-            return false;
-        }
-    }
-
-    class TopCommand implements CommandExecutor {
-        @Override
-        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-            if (sender instanceof Player) {
-                Player p = (Player) sender;
-                p.teleport(p.getWorld().getHighestBlockAt(p.getLocation()).getLocation().add(0, 1, 0));
-            }
-            return false;
-        }
-    }
-
-    class BackCommand implements CommandExecutor {
-        @Override
-        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-            if (sender instanceof Player) {
-                Player p = (Player) sender;
-                if (tele_backstack.get(p.getUniqueId().toString()) != null) {
-                    if (!tele_backstack.get(p.getUniqueId().toString()).isEmpty()) {
-                        if (args.length > 0) {
-                            if (args[0].equalsIgnoreCase("show")) {
-                                for (Map<String, Object> map : tele_backstack.get(p.getUniqueId().toString())) {
-                                    p.sendMessage(Location.deserialize(map).toString());
-                                }
-                                return true;
-                            }
-                        }
-                        p.teleport(Location.deserialize(tele_backstack.get(p.getUniqueId().toString()).pollLast()));
-                        return true;
-                    } else {
-                        p.sendMessage("No back stack");
-                    }
-                }
-            }
-            return false;
-        }
-    }
-
-    class HistoryCommand implements CommandExecutor {
-        @Override
-        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-            if (sender instanceof Player) {
-                Player p = (Player) sender;
-                for (String cmd : command_history.get(p.getUniqueId().toString())) {
-                    p.sendMessage(cmd);
-                }
-                return true;
-            }
-            return false;
-        }
-    }
-
-    class FlachwitzCommand implements CommandExecutor {
-        @Override
-        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-            if (sender instanceof Player) {
-                Player p = (Player) sender;
-                if (args.length > 0) {
-                    if (args[0].equalsIgnoreCase("download")) {
-                        startFlachwitzeDownload();
-                        return true;
-                    }
-                }
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    player.sendMessage(flachwitze[new Random().nextInt(flachwitze.length)]);
-                }
-                return true;
-            }
-            return false;
-        }
-    }
-    class WitzCommand implements CommandExecutor {
-        @Override
-        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-            if (sender instanceof Player) {
-                Player p = (Player) sender;
-                if (args.length > 0) {
-                    if (args[0].equalsIgnoreCase("download")) {
-                        moreWitze();
-                        return true;
-                    }
-                }
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    ArrayList<String> ww = new ArrayList<>();
-                    for (String k : witze.keySet()) {
-                        ww.addAll(witze.get(k).get("jokes"));
-                    }
-                    player.sendMessage(ww.get(new Random().nextInt(ww.size())));
-                }
-                return true;
-            }
-            return false;
         }
     }
 
@@ -393,7 +291,8 @@ public final class Pack extends JavaPlugin implements Listener {
     void reloadWitze() {
         try {
             JsonReader r = new JsonReader(new FileReader(witze_file));
-            witze = gson.fromJson(r, new TypeToken<HashMap<String, HashMap<String, List<String>>>>(){}.getType());
+            witze = gson.fromJson(r, new TypeToken<HashMap<String, HashMap<String, List<String>>>>() {
+            }.getType());
             System.out.printf("More Witze loaded!%n");
         } catch (IOException e) {
             e.printStackTrace();
@@ -420,13 +319,28 @@ public final class Pack extends JavaPlugin implements Listener {
         }
     }
 
+    private void getIP() {
+        new BukkitRunnable() {
+            int c = 0;
+            @Override
+            public void run() {
+                while (IP == null) {
+                    if (c >= 5) {
+                        return;
+                    }
+                    IP = getIp();
+                    c++;
+                }
+            }
+        }.runTaskAsynchronously(this);
+    }
+
     @Override
     public void onEnable() {
-        try {
-            IP = getIp();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        instance = this;
+
+        getIP();
+
         getDataFolder().mkdir();
         player_ips_file = Paths.get(getDataFolder().getAbsolutePath(), "ips.json").toFile();
         tele_backstack_file = Paths.get(getDataFolder().getAbsolutePath(), "tele_backstack.json").toFile();
@@ -442,9 +356,9 @@ public final class Pack extends JavaPlugin implements Listener {
         if (tele_backstack == null) tele_backstack = new HashMap<>();
         if (command_history == null) command_history = new HashMap<>();
 
-        System.out.printf("Read from %s: %d Players%n", player_ips_file, player_ips.keySet().size());
-        System.out.printf("Read from %s: %d Players%n", tele_backstack_file, tele_backstack.keySet().size());
-        System.out.printf("Read from %s: %d Players%n", command_history_file, command_history.keySet().size());
+        System.out.printf("Read from %s: %d Players%n", player_ips_file.getName(), player_ips.keySet().size());
+        System.out.printf("Read from %s: %d Players%n", tele_backstack_file.getName(), tele_backstack.keySet().size());
+        System.out.printf("Read from %s: %d Players%n", command_history_file.getName(), command_history.keySet().size());
 
         if (!flachwitze_file.exists()) startFlachwitzeDownload();
         else reloadFlachwitzeFromDisk();
@@ -453,14 +367,17 @@ public final class Pack extends JavaPlugin implements Listener {
 
         properties = readProperties();
         startRunnable();
+
         PluginManager pm = Bukkit.getPluginManager();
         pm.registerEvents(this, this);
-        this.getCommand("ip").setExecutor(new IPCommand());
-        this.getCommand("top").setExecutor(new TopCommand());
-        this.getCommand("back").setExecutor(new BackCommand());
-        this.getCommand("history").setExecutor(new HistoryCommand());
-        this.getCommand("flachwitz").setExecutor(new FlachwitzCommand());
-        this.getCommand("witz").setExecutor(new WitzCommand());
+
+        this.getCommand("ip").setExecutor(new Commands.IPCommand());
+        this.getCommand("top").setExecutor(new Commands.TopCommand());
+        this.getCommand("back").setExecutor(new Commands.BackCommand());
+        this.getCommand("history").setExecutor(new Commands.HistoryCommand());
+        this.getCommand("flachwitz").setExecutor(new Commands.FlachwitzCommand());
+        this.getCommand("witz").setExecutor(new Commands.WitzCommand());
+        this.getCommand("debug").setExecutor(new Commands.DebugCommand());
 
     }
 
