@@ -2,3 +2,16 @@ name: Pack
 version: ${project.version}
 main: mkypr.pack.Pack
 api-version: 1.16
+commands:
+  ip:
+    description: Get IPs
+  top:
+    description: Go top
+  back:
+    description: Go back
+  history:
+    description: Command History
+  flachwitz:
+    description: Flachwitz
+  witz:
+    description: Witz

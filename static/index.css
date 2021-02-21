@@ -1,0 +1,117 @@
+body {
+    /* overflow: hidden; */
+    width: 90%;
+}
+
+div.footer {
+    display: flex;
+    position: absolute;
+    bottom: 0;
+    height: 50%;
+    width: 70%;
+    left: 25%;
+    margin-top: 40px;
+}
+
+div.body {
+    width: 100%;
+    padding: 50px;
+}
+
+div {
+    -webkit-user-select: none;
+    /* Safari */
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* IE10+/Edge */
+    user-select: none;
+    /* Standard */
+}
+
+div.pack-explorer {
+    /* background-color: lightblue; */
+    border-color: black;
+    border-width: 5px;
+    border-radius: 5px;
+}
+
+div.pack-explorer-card {
+    padding: 5px;
+    /* overflow: hidden; */
+    /* border-bottom: 2px solid black; */
+    /* transition: transform .15s; */
+    /* border-radius: 5px; */
+}
+
+div.pack-explorer-card-seperator {
+    overflow: hidden;
+    float: right;
+}
+
+div.pack-explorer-card-text {
+    padding: 10px;
+    overflow: hidden;
+    /* border: 1px solid grey; */
+    border-radius: 100px;
+    background-color: rgb(245, 245, 245);
+    /* transition: transform .15s; */
+    -moz-transition: all .15s ease-in-out;
+    -o-transition: all .15s ease-in-out;
+    -webkit-transition: all .15s ease-in-out;
+    transition: all .15s ease-in-out;
+    /* transition: color .2s ease-in; */
+}
+
+div.pack-explorer-card-time {
+    float: left;
+}
+
+div.pack-explorer-card-size {
+    float: right;
+}
+
+div.pack-explorer-card-text:hover {
+    transform: scaleX(1.025);
+    /* transform: scale(1.1, 30); */
+    background-color: #77ff77;
+    /* border: 2px solid white; */
+    border-bottom: 2px solid black;
+}
+
+div.pack-explorer-crud {
+    padding-bottom: 10px;
+    direction: rtl;
+}
+
+button.pack-explorer-crud-btn {
+    margin-left: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    float: right;
+}
+
+div.pack-explorer-card-cb-box {
+    float: right;
+    position: relative;
+    top: 50%;
+    transform: translateY(50%);
+    border-radius: 5px;
+    margin: 5;
+}
+
+div.pack-explorer-card-seperator {
+    width: 2vw;
+    height: 1vw;
+}
+
+div.pack-explorer-card-text-seperator {
+    width: 2vw;
+    height: 1vw;
+    float: left;
+}
+
+div.inline {
+    display: inline-block;
+}

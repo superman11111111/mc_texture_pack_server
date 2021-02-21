@@ -35,14 +35,15 @@ function create_crud_btn(icon, selection, callback) {
     let btn = create_icon_btn(icon)
     btn.className = 'pack-explorer-crud-btn'
     btn.addEventListener('click', function () {
-        if (selection.length > 0) {
+        if (selection.size > 0) {
             for (let cb of document.getElementsByClassName('pack-explorer-card-cb')) {
                 cb.checked = false;
             }
+            selection.clear()
             callback()
         } else {
-            for (let cb of document.getElementsByClassName('pack-explorer-card-cb-box')) {
-                change_color_timeout(cb, 'red')
+            for (let cbb of document.getElementsByClassName('pack-explorer-card-cb-box')) {
+                change_color_timeout(cbb, 'red')
             }
         }
     });
@@ -66,19 +67,19 @@ function ts_to_date(timestamp) {
 
 async function fill_explorers(explorers) {
     for (let pe of explorers) {
-        let selection = [];
+        let selection = new Set();
         let crud = document.createElement('div')
         crud.className = 'pack-explorer-crud'
 
         crud.appendChild(document.createTextNode("Upload time"))
 
         crud.appendChild(create_crud_btn('fa fa-trash', selection, function () {
-            selection = []
-            console.log('NOT IMPLEMENTED')
+            toastr.error('Deleting currently not implemented')
+            console.log('Delete not implemented')
         }));
         crud.appendChild(create_crud_btn('fas fa-edit', selection, function () {
-            selection = []
-            console.log('NOT IMPLEMENTED')
+            toastr.error('Edit currently not implemented')
+            console.log('Edit not implemented')
         }));
 
         let clear = document.createElement('div')
@@ -130,14 +131,9 @@ async function fill_explorers(explorers) {
                     pe.appendChild(card)
 
                     cb.addEventListener('click', function () {
-                        for (let i = 0; i < selection.length; i++) {
-                            const selcb = selection[i];
-                            if (selcb == cb) {
-                                selection.splice(i, 1)
-                                return;
-                            }
+                        if (!selection.has(cb)) {
+                            selection.add(cb);
                         }
-                        selection.push(cb);
                     })
 
                     text.addEventListener("click", function () {
